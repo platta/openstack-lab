@@ -1,0 +1,3 @@
+identity_hosts:
+  {{ inventory_hostname }}:
+    ip: 172.29.236.100

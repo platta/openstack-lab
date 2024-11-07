@@ -1,0 +1,63 @@
+---
+# If you need to specify an IP for this server, uncomment this line.
+# ansible_host: 192.168.4.6
+
+# If you need to specify the location of your Python binary, uncomment this
+# line. You may need this if, for example, you want to use a venv on your
+# remote host
+# ansible_python_interpreter: /home/user/openstack.cloud/bin/python3
+
+#----------------------
+# Pre-install variables
+
+# Should correspond to a tag in the openstack-ansible repository.
+osa_version: 29.0.2
+
+# Physical IP of the host. This will be set as the static IP of br-vlan.
+# Other devices will be able to attach to br-vlan and, passing through the
+# physical NIC interface, be able to attach to the physical network.
+host_ip: 192.168.4.32
+
+# The CIDR of the physical network OpenStack will live on.
+host_cidr: 192.168.4.0/24
+
+# The device name of the physical NIC you will bridge for OpenStack. See
+# `ip a` for the list of devices on your host.
+host_net_device: enp3s0
+
+# Provide two IP addresses for the physical host to have on the network.
+# You'll generally want them to be adjacent and at the beginning of the
+# IP range you're setting aside for OpenStack, but those aren't technical
+# requirements.
+br_vlan_ip_1: 192.168.4.32/24
+br_vlan_ip_2: 192.168.4.33/24
+
+# Provide the gateway IP of the physical network.
+br_vlan_gateway: 192.168.4.1
+
+# Provide the default DNS server of the physical network.
+br_vlan_dns: 192.168.4.1
+
+#-----------------------
+# Post-install variables
+cloud_name: default
+
+project_name: Your Project Name
+project_description: Your Project Description
+
+project_admin_username: aplatt
+project_admin_email: <adam@plattsoft.net>
+project_admin_password: YourPassword
+
+project_network_cidr: 10.0.0.0/24
+
+public_allocation_pool_start: 192.168.4.34
+public_allocation_pool_end: 192.168.4.63
+
+glance_images:
+  - name: CirrOS 0.6.2
+    url: https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img
+  - name: Debian 12 (20240717-1811)
+    url: https://cdimage.debian.org/images/cloud/bookworm/20240717-1811/debian-12-genericcloud-amd64-20240717-1811.qcow2
+  - name: Ubuntu 24.04 (20240821)
+    url: https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img

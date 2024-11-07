@@ -1,0 +1,20 @@
+---
+- name: Ensure image directory exists
+  ansible.builtin.file:
+    path: /etc/openstack_images
+    state: directory
+
+- name: Download image files
+  ansible.builtin.get_url:
+    url: "{{ item['url'] }}"
+    dest: "/etc/openstack_images/{{ item['url'] | basename }}"
+  loop: "{{ glance_images }}"
+
+- name: Upload images to glance
+  openstack.cloud.image:
+    cloud: "{{ cloud_name }}"
+    project: admin
+    name: "{{ item['name'] }}"
+    filename: "/etc/openstack_images/{{ item['url'] | basename }}"
+    visibility: public
+  loop: "{{ glance_images }}"

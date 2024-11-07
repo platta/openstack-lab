@@ -1,0 +1,11 @@
+- name: Prepare identity configuration
+  ansible.builtin.include_tasks: prepare_identities.yml
+
+- name: Prepare network configuration
+  ansible.builtin.include_tasks: prepare_networks.yml
+
+- name: Prepare compute flavors
+  ansible.builtin.include_tasks: prepare_flavors.yml
+
+- name: Prepare images
+  ansible.builtin.include_tasks: prepare_images.yml

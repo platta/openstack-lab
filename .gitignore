@@ -1,0 +1,9 @@
+inventory.yml
+inventory.*.yml
+!inventory.sample.yml
+roles/osa_lab_pre/templates/openstack_deploy/user_secrets.yml
+
+host_vars/*
+!host_vars/SAMPLE.yml
+
+.python-version

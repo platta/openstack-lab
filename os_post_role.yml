@@ -1,0 +1,5 @@
+- name: Apply OpenStack Ansible lab post-install configuration
+  hosts: all
+  roles:
+    - role: osa_lab_post
+      become: true

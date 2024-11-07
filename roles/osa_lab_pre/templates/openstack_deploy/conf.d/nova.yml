@@ -1,0 +1,6 @@
+compute-infra_hosts:
+  {{ inventory_hostname }}:
+    ip: 172.29.236.100
+compute_hosts:
+  {{ inventory_hostname }}:
+    ip: 172.29.236.100

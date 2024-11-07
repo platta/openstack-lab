@@ -1,0 +1,65 @@
+- name: Create public network
+  openstack.cloud.network:
+    cloud: "{{ cloud_name }}"
+    project: admin
+    name: Public Network
+    external: true
+    shared: false
+    provider_network_type: flat
+    provider_physical_network: physnet1
+  register: public_network_info
+
+- name: Create public subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud_name }}"
+    project: admin
+    name: Public Subnet
+    network: Public Network
+    allocation_pool_start: "{{ public_allocation_pool_start }}"
+    allocation_pool_end: "{{ public_allocation_pool_end }}"
+    cidr: "{{ host_cidr }}"
+    dns_nameservers: "{{ br_vlan_dns }}"
+    is_dhcp_enabled: false
+
+- name: Create project network
+  openstack.cloud.network:
+    cloud: "{{ cloud_name }}"
+    project: "{{ project_name }}"
+    name: "{{ project_name }} Network"
+    shared: true
+
+- name: Create project subnet
+  openstack.cloud.subnet:
+    cloud: "{{ cloud_name }}"
+    project: "{{ project_name }}"
+    name: "{{ project_name }} Subnet"
+    network: "{{ project_name }} Network"
+    cidr: "{{ project_network_cidr }}"
+    dns_nameservers: "{{ br_vlan_dns }}"
+
+- name: Create project router
+  openstack.cloud.router:
+    cloud: "{{ cloud_name }}"
+    project: "{{ project_name }}"
+    name: "{{ project_name }} Router"
+    network: "{{ public_network_info['id'] }}"
+    interfaces:
+      - "{{ project_name }} Subnet"
+
+- name: Allow ICMP traffic in default security group
+  openstack.cloud.security_group_rule:
+    cloud: "{{ cloud_name }}"
+    project: "{{ project_name }}"
+    security_group: default
+    protocol: icmp
+    remote_ip_prefix: 0.0.0.0/0
+
+- name: Allow SSH traffic in default security group
+  openstack.cloud.security_group_rule:
+    cloud: "{{ cloud_name }}"
+    project: "{{ project_name }}"
+    security_group: default
+    protocol: tcp
+    port_range_min: 22
+    port_range_max: 22
+    remote_ip_prefix: 0.0.0.0/0

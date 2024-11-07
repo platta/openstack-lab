@@ -1,0 +1,10 @@
+---
+collections:
+  - name: openstack.config_template
+    source: https://opendev.org/openstack/ansible-config_template
+    type: git
+    version: 2.1.0
+  - name: openstack.cloud
+    source: https://opendev.org/openstack/ansible-collections-openstack
+    type: git
+    version: 2.2.0

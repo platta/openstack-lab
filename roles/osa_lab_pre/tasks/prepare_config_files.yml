@@ -1,0 +1,38 @@
+- name: Ensure config folder is removed.
+  ansible.builtin.file:
+    path: /etc/openstack_deploy
+    state: absent
+
+- name: Ensure directory structure exists
+  ansible.builtin.file:
+    path: '/etc/openstack_deploy/{{ item.path }}'
+    state: directory
+  with_community.general.filetree: '../templates/openstack_deploy'
+  when: item.state == 'directory'
+
+- name: Ensure files are populated from templates
+  ansible.builtin.template:
+    src: '{{ item.src }}'
+    dest: '/etc/openstack_deploy/{{ item.path }}'
+  with_community.general.filetree: '../templates/openstack_deploy'
+  when: item.state == 'file'
+
+- name: Copy secrets file if not provided.
+  ansible.builtin.copy:
+    src: /opt/openstack-ansible/etc/openstack_deploy/user_secrets.yml
+    dest: /etc/openstack_deploy/user_secrets.yml
+    remote_src: yes
+  when: not lookup('fileglob', 'templates/openstack_deploy/user_secrets.yml', errors='warn')
+
+- name: Generate secrets if not provided.
+  ansible.builtin.shell:
+    cmd: ./scripts/pw-token-gen.py --file /etc/openstack_deploy/user_secrets.yml
+    chdir: /opt/openstack-ansible
+  when: not lookup('fileglob', 'templates/openstack_deploy/user_secrets.yml', errors='warn')
+
+- name: Fetch generated secrets if not already present.
+  ansible.builtin.fetch:
+    src: /etc/openstack_deploy/user_secrets.yml
+    dest: roles/osa_lab_pre/templates/openstack_deploy/user_secrets.yml
+    flat: true
+  when: not lookup('fileglob', 'templates/openstack_deploy/user_secrets.yml', errors='warn')

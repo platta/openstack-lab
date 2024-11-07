@@ -1,0 +1,37 @@
+- name: Remove packages
+  ansible.builtin.apt:
+    pkg:
+      - mysql-common
+
+- name: Install packages
+  ansible.builtin.apt:
+    pkg:
+      - apt-transport-https
+      - bridge-utils
+      - btrfs-progs
+      - build-essential
+      - chrony
+      - curl
+      - dbus
+      - debootstrap
+      - ethtool
+      - git
+      - git-core
+      - ifenslave
+      - iptables
+      - iputils-tracepath
+      - ipython3
+      - lsof
+      - lvm2
+      - openssh-server
+      - parted
+      - python3
+      - python3-dev
+      - sshpass
+      - sudo
+      - tcpdump
+      - vim
+      - vlan
+      - xfsprogs
+    state: latest
+    update_cache: true

@@ -1,0 +1,40 @@
+---
+- name: Create m1.tiny
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud_name }}"
+    name: m1.tiny
+    vcpus: 1
+    disk: 1
+    ram: 512
+
+- name: Create m1.small
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud_name }}"
+    name: m1.small
+    vcpus: 1
+    disk: 20
+    ram: 2048
+
+- name: Create m1.medium
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud_name }}"
+    name: m1.medium
+    vcpus: 2
+    disk: 40
+    ram: 4096
+
+- name: Create m1.large
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud_name }}"
+    name: m1.large
+    vcpus: 4
+    disk: 80
+    ram: 8192
+
+- name: Create m1.xlarge
+  openstack.cloud.compute_flavor:
+    cloud: "{{ cloud_name }}"
+    name: m1.xlarge
+    vcpus: 8
+    disk: 160
+    ram: 16384

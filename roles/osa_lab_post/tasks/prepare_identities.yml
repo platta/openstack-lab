@@ -1,0 +1,59 @@
+- name: Create project
+  openstack.cloud.project:
+    cloud: "{{ cloud_name }}"
+    name: "{{ project_name }}"
+    description: "{{ project_description }}"
+
+- name: Create manager group for project
+  openstack.cloud.identity_group:
+    cloud: "{{ cloud_name }}"
+    name: "{{ project_name }} Managers"
+    description: "{{ project_name }} manager users"
+
+- name: Create members group for project
+  openstack.cloud.identity_group:
+    cloud: "{{ cloud_name }}"
+    name: "{{ project_name }} Members"
+    description: "{{ project_name }} member users"
+
+- name: Create readers group for project
+  openstack.cloud.identity_group:
+    cloud: "{{ cloud_name }}"
+    name: "{{ project_name }} Readers"
+    description: "{{ project_name }} reader users"
+
+- name: Grant manager role to the manager group
+  openstack.cloud.role_assignment:
+    cloud: "{{ cloud_name }}"
+    group: "{{ project_name }} Managers"
+    role: manager
+    project: "{{ project_name }}"
+
+- name: Grant member role to the member group
+  openstack.cloud.role_assignment:
+    cloud: "{{ cloud_name }}"
+    group: "{{ project_name }} Members"
+    role: member
+    project: "{{ project_name }}"
+
+- name: Grant reader role to the reader group
+  openstack.cloud.role_assignment:
+    cloud: "{{ cloud_name }}"
+    group: "{{ project_name }} Readers"
+    role: reader
+    project: "{{ project_name }}"
+
+- name: Create project admin user
+  openstack.cloud.identity_user:
+    cloud: "{{ cloud_name }}"
+    name: "{{ project_admin_username }}"
+    password: "{{ project_admin_password }}"
+    email: "{{ project_admin_email }}"
+    default_project: "{{ project_name }}"
+  no_log: true
+
+- name: Add admin user to manager group
+  openstack.cloud.group_assignment:
+    cloud: "{{ cloud_name }}"
+    user: "{{ project_admin_username }}"
+    group: "{{ project_name }} Managers"

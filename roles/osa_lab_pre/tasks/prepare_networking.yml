@@ -1,0 +1,232 @@
+- name: Run the systemd-networkd role
+  include_role:
+    name: systemd_networkd
+  vars:
+    systemd_networkd_prefix: "openstack"
+    systemd_networkd_epel_mirror: "{{ (nodepool_vars is defined) | ternary(nodepool_vars.NODEPOOL_EPEL_MIRROR, 'http://download.fedoraproject.org/pub/epel') }}"
+    systemd_interface_cleanup: true
+    systemd_run_networkd: true
+    systemd_netdevs:
+
+      - NetDev:
+          Name: dummy-mgmt
+          Kind: dummy
+      - NetDev:
+          Name: dummy-vxlan
+          Kind: dummy
+      - NetDev:
+          Name: dummy-storage
+          Kind: dummy
+      - NetDev:
+          Name: dummy-dbaas
+          Kind: dummy
+      - NetDev:
+          Name: dummy-lbaas
+          Kind: dummy
+      - NetDev:
+          Name: dummy-bmaas
+          Kind: dummy
+
+      - NetDev:
+          Name: br-mgmt
+          Kind: bridge
+      - NetDev:
+          Name: br-vxlan
+          Kind: bridge
+      - NetDev:
+          Name: br-storage
+          Kind: bridge
+      - NetDev:
+          Name: br-vlan
+          Kind: bridge
+      - NetDev:
+          Name: br-dbaas
+          Kind: bridge
+      - NetDev:
+          Name: br-lbaas
+          Kind: bridge
+      - NetDev:
+          Name: br-bmaas
+          Kind: bridge
+
+      - NetDev:
+          Name: br-vlan-veth
+          Kind: veth
+        Peer:
+          Name: eth12
+      - NetDev:
+          Name: br-dbaas-veth
+          Kind: veth
+        Peer:
+          Name: eth13
+      - NetDev:
+          Name: br-lbaas-veth
+          Kind: veth
+        Peer:
+          Name: eth14
+      - NetDev:
+          Name: br-bmaas-veth
+          Kind: veth
+        Peer:
+          Name: eth15
+
+    systemd_networks:
+
+      - interface: "dummy-mgmt"
+        bridge: "br-mgmt"
+        mtu: 9000
+      - interface: "br-mgmt"
+        config_overrides:
+          Network:
+            Address:
+              ? "172.29.236.100/22"
+              ? "172.29.236.101/22"
+
+      - interface: "dummy-storage"
+        bridge: "br-storage"
+        mtu: 9000
+      - interface: "br-storage"
+        address: "172.29.244.100"
+        netmask: "255.255.252.0"
+
+      - interface: "dummy-dbaas"
+        bridge: "br-dbaas"
+        mtu: 9000
+      - interface: "br-dbaas"
+        address: "172.29.252.100"
+        netmask: "255.255.252.0"
+      - interface: "br-dbaas-veth"
+        bridge: "br-dbaas"
+        mtu: 9000
+
+      - interface: "dummy-lbaas"
+        bridge: "br-lbaas"
+        mtu: 9000
+      - interface: "br-lbaas"
+        address: "172.29.232.100"
+        netmask: "255.255.252.0"
+      - interface: "br-lbaas-veth"
+        bridge: "br-lbaas"
+        mtu: 9000
+
+      - interface: "dummy-bmaas"
+        bridge: "br-bmaas"
+        mtu: 1500
+      - interface: "br-bmaas"
+        address: "172.29.228.100"
+        netmask: "255.255.252.0"
+      - interface: "br-bmaas-veth"
+        bridge: "br-bmaas"
+        mtu: 1500
+
+      - interface: "dummy-vxlan"
+        bridge: "br-vxlan"
+        mtu: 9000
+      - interface: "br-vxlan"
+        address: "172.29.240.100"
+        netmask: "255.255.252.0"
+
+      - interface: "{{ host_net_device }}"
+        bridge: "br-vlan"
+        mtu: 9000
+      - interface: "br-vlan"
+        config_overrides:
+          Network:
+            Address:
+              ? "BR_VLAN_IP_1"
+              ? "BR_VLAN_IP_2"
+            Gateway: "{{ br_vlan_gateway }}"
+            DNS: "{{ br_vlan_dns }}"
+      - interface: "br-vlan-veth"
+        bridge: "br-vlan"
+        mtu: 9000
+
+# These next three tasks take care of a problem that comes from needing to use
+# an Ansible variable as a yaml key instead of a value. Ansible will not perform
+# variable substitution for keys. Instead, we're setting unique values in the
+# above settings and then we're going to go back and replace them with the
+# actual variable values. The above code generates many files. We don't know
+# exactly which one we need to modify, so we look at all the files with the
+# extension we know we need.
+- name: Find all systemd networkd config files
+  ansible.builtin.find:
+    paths: /etc/systemd/network/
+    patterns: "*.network"
+  register: config_files
+
+- name: Replace br-vlan IP 1
+  ansible.builtin.replace:
+    path: "{{ item.path }}"
+    regexp: "BR_VLAN_IP_1"
+    replace: "{{ br_vlan_ip_1 }}"
+  with_items: "{{ config_files.files }}"
+
+- name: Replace br-vlan IP 2
+  ansible.builtin.replace:
+    path: "{{ item.path }}"
+    regexp: "BR_VLAN_IP_2"
+    replace: "{{ br_vlan_ip_2 }}"
+  with_items: "{{ config_files.files }}"
+
+# NOTE(jrosser) The systemd_networkd role uses a handler to restart the networking service
+# This will normally not run until the end of the play, so we must force it here
+- name: Force systemd_networkd hander to run
+  meta: flush_handlers
+
+# NOTE(jrosser) The intention here is not to proceed further until the network bridges are up
+# This ensures there will be no race between the bridges coming up and subsequent tasks which
+# require functional network interfaces
+- name: Check that network bridges are up
+  wait_for:
+    port: 22
+    timeout: 30
+    host: "{{ item }}"
+  with_items:
+    - 172.29.236.100  # br-mgmt
+    - 172.29.244.100  # br-storage
+    - 172.29.252.100  # br-dbaas
+    - 172.29.232.100  # br-lbaas
+    - 172.29.240.100  # br-vxlan
+    - 172.29.228.100  # br-bmaas
+
+- name: Run the systemd service role
+  include_role:
+    name: systemd_service
+  vars:
+    systemd_services:
+      - service_name: "networking-post-up"
+        config_overrides:
+          Unit:
+            Description: networking-post-up
+            After: network-online.target
+            Wants: network-online.target
+          Service:
+            RemainAfterExit: yes
+        service_type: oneshot
+        execstarts:
+          - "-ethtool -K br-mgmt gso off sg off tso off tx off"
+          - "-ethtool -K br-vxlan gso off sg off tso off tx off"
+          - "-ethtool -K br-storage gso off sg off tso off tx off"
+          - "-ethtool -K br-vlan gso off sg off tso off tx off"
+          - "-ethtool -K br-dbaas gso off sg off tso off tx off"
+          - "-ethtool -K br-lbaas gso off sg off tso off tx off"
+          - "-ethtool -K br-bmaas gso off sg off tso off tx off"
+          - "-ip link set eth12 up"
+          - "-ip link set br-vlan-veth up"
+          - "-ethtool -K eth12 gso off sg off tso off tx off"
+          - "-ip link set eth13 up"
+          - "-ip link set br-dbaas-veth up"
+          - "-ethtool -K eth13 gso off sg off tso off tx off"
+          - "-ip link set eth14 up"
+          - "-ip link set br-lbaas-veth up"
+          - "-ethtool -K eth14 gso off sg off tso off tx off"
+          - "-ip link set eth15 up"
+          - "-ip link set br-bmaas-veth up"
+          - "-ethtool -K eth15 gso off sg off tso off tx off"
+        enabled: yes
+        state: started
+    systemd_tempd_prefix: openstack
+
+- name: Updating the facts due to net changes
+  setup:
+    gather_subset: network

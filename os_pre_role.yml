@@ -1,0 +1,5 @@
+- name: Apply OpenStack Ansible lab pre-install configuration
+  hosts: all
+  roles:
+    - role: osa_lab_pre
+      become: true

@@ -1,0 +1,13 @@
+---
+- name: systemd_networkd
+  src: https://opendev.org/openstack/ansible-role-systemd_networkd
+  scm: git
+  version: ad62bd2799eacebd44edfc9d00bbc2c034e0b9c3
+  trackbranch: stable/2024.1
+  shallow_since: '2024-06-03'
+- name: systemd_service
+  src: https://opendev.org/openstack/ansible-role-systemd_service
+  scm: git
+  version: 88697e28783bea43c84607fe1727a8ca9e96c13f
+  trackbranch: stable/2024.1
+  shallow_since: '2024-06-03'

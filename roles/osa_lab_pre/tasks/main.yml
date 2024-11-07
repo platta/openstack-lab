@@ -1,0 +1,22 @@
+- name: Install packages (Debian)
+  ansible.builtin.import_tasks: debian.yml
+  when: ansible_facts['os_family']|lower == 'debian'
+
+- name: Clone openstack-ansible repository
+  ansible.builtin.git:
+    repo: https://opendev.org/openstack/openstack-ansible
+    dest: /opt/openstack-ansible
+    version: "{{ osa_version | default('master') }}"
+
+- name: Create the required directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "/openstack"
+
+- name: Configure networking
+  ansible.builtin.include_tasks: prepare_networking.yml
+
+- name: Write configuration files
+  ansible.builtin.include_tasks: prepare_config_files.yml
